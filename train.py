@@ -10,25 +10,43 @@ from deepsleep.sleep_stage import (NUM_CLASSES,
                                    EPOCH_SEC_LEN,
                                    SAMPLING_RATE)
 
+import argparse
+import os
+import shutil
 
-FLAGS = tf.app.flags.FLAGS
 
-tf.app.flags.DEFINE_string('data_dir', 'data',
-                           """Directory where to load training data.""")
-tf.app.flags.DEFINE_string('output_dir', 'output',
-                           """Directory where to save trained models """
-                           """and outputs.""")
-tf.app.flags.DEFINE_integer('n_folds', 20,
-                           """Number of cross-validation folds.""")
-tf.app.flags.DEFINE_integer('fold_idx', 0,
-                            """Index of cross-validation fold to train.""")
-tf.app.flags.DEFINE_integer('pretrain_epochs', 100,
-                            """Number of epochs for pretraining DeepFeatureNet.""")
-tf.app.flags.DEFINE_integer('finetune_epochs', 200,
-                            """Number of epochs for fine-tuning DeepSleepNet.""")
-tf.app.flags.DEFINE_boolean('resume', False,
-                            """Whether to resume the training process.""")
+# Create an ArgumentParser instance
+parser = argparse.ArgumentParser()
 
+# Define command-line arguments
+parser.add_argument('--data_dir', type=str, default='data', help='Directory where to load training data.')
+parser.add_argument('--output_dir', type=str, default='output', help='Directory where to save trained models and outputs.')
+parser.add_argument('--n_folds', type=int, default=20, help='Number of cross-validation folds.')
+parser.add_argument('--fold_idx', type=int, default=0, help='Index of cross-validation fold to train.')
+parser.add_argument('--pretrain_epochs', type=int, default=100, help='Number of epochs for pretraining DeepFeatureNet.')
+parser.add_argument('--finetune_epochs', type=int, default=200, help='Number of epochs for fine-tuning DeepSleepNet.')
+parser.add_argument('--resume', action='store_true', help='Whether to resume the training process.')
+
+# Parse the command-line arguments
+FLAGS = parser.parse_args()
+
+# Access the parsed arguments
+data_dir = FLAGS.data_dir
+output_dir = FLAGS.output_dir
+n_folds = FLAGS.n_folds
+fold_idx = FLAGS.fold_idx
+pretrain_epochs = FLAGS.pretrain_epochs
+finetune_epochs = FLAGS.finetune_epochs
+resume = FLAGS.resume
+
+# Example usage of the parsed arguments
+print("Data directory:", data_dir)
+print("Output directory:", output_dir)
+print("Number of folds:", n_folds)
+print("Fold index:", fold_idx)
+print("Pretrain epochs:", pretrain_epochs)
+print("Finetune epochs:", finetune_epochs)
+print("Resume:", resume)
 
 def pretrain(n_epochs):
     trainer = DeepFeatureNetTrainer(
@@ -77,10 +95,16 @@ def finetune(model_path, n_epochs):
 def main(argv=None):
     # Output dir
     output_dir = os.path.join(FLAGS.output_dir, "fold{}".format(FLAGS.fold_idx))
+    # if not FLAGS.resume:
+    #     if tf.gfile.Exists(output_dir):
+    #         tf.gfile.DeleteRecursively(output_dir)
+    #     tf.gfile.MakeDirs(output_dir)
     if not FLAGS.resume:
-        if tf.gfile.Exists(output_dir):
-            tf.gfile.DeleteRecursively(output_dir)
-        tf.gfile.MakeDirs(output_dir)
+        if os.path.exists(output_dir):
+            print(f"Will delete {output_dir}")
+            # shutil.rmtree(output_dir)
+        print(f"And make {output_dir}")
+        # os.makedirs(output_dir)
 
     pretrained_model_path = pretrain(
         n_epochs=FLAGS.pretrain_epochs
@@ -92,4 +116,5 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
-    tf.compat.v1.app.run()
+    #tf.compat.v1.app.run()
+    main()
